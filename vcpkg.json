@@ -1,0 +1,14 @@
+{
+    "name": "test",
+    "version-string": "0.1.0",
+    "dependencies": [
+        "sfml"
+    ],
+    "overrides": [
+        {
+            "name": "sfml",
+            "version": "2.6.1"
+        }
+    ],
+    "builtin-baseline": "d015e31e90838a4c9dfa3eed45979bc70d9357fc"
+}
