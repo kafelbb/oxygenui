@@ -473,7 +473,7 @@ img {
     }
 
     header {
-        font-size: 1.15rem;
+        font-size: 1rem;
     }
 
     h3 {
@@ -523,7 +523,7 @@ img {
     }
 
     .flairtext {
-        font-size: 0.85rem;
+        font-size: 0.75rem;
     }
 
     .btns {
@@ -532,7 +532,7 @@ img {
     }
 
     .btn {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         /* ИСПРАВЛЕНИЕ: Кнопки стали значительно тоньше, компактнее и аккуратнее */
         height: 5rem !important;
         padding-top: 0.75rem !important;
