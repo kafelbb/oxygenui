@@ -7,160 +7,180 @@
 
 #include "SFML/Graphics.hpp"
 
-//
 
-const float pi = 3.14159265f;
+namespace oxyui {
 
-extern bool updating;
+	const float pi = 3.14159265f;
 
-enum class mousebutton {
-	left,
-	right,
-	middle,
-	none
-};
+	enum class mousebutton {
+		left,
+		right,
+		middle,
+		none
+	};
 
-enum class layout {
-	none,
-	flex_y,
-	flex_x
-};
+	enum class layout {
+		none,
+		flex_y,
+		flex_x
+	};
 
-enum class axis {
-	width,
-	height,
-};
+	enum class axis {
+		width,
+		height,
+	};
 
-enum class text_align_x {
-	left,
-	center,
-	right
-};
+	enum class text_align_x {
+		left,
+		center,
+		right
+	};
 
-enum class text_align_y {
-	top,
-	center,
-	bottom
-};
+	enum class text_align_y {
+		top,
+		center,
+		bottom
+	};
 
-struct color {
-	sf::Color content;
-	float position;
-};
+	struct color {
+		sf::Color content;
+		float position;
+	};
 
-struct color_composition {
-	std::vector<std::shared_ptr<color>> content;
-};
+	struct color_composition {
+		std::vector<std::shared_ptr<color>> content;
+	};
 
-struct vector4 {
-	float x_scale;
-	float x_offset;
-	float y_scale;
-	float y_offset;
-};
+	struct vector4 {
+		float x_scale;
+		float x_offset;
+		float y_scale;
+		float y_offset;
+	};
 
-struct vec4 {
-	float x;
-	float y;
-	float z;
-	float w;
-};
+	struct padding_t {
+		float left = 0;
+		float right = 0;
+		float top = 0;
+		float bottom = 0;
+	};
 
-class uiobject {
-public:
-	uiobject();
+	struct vec4 {
+		float x;
+		float y;
+		float z;
+		float w;
+	};
 
-	static std::shared_ptr<uiobject> create();
-	void add(uiobject* child);
-	void sort();
-	void set_image(std::string s, bool smooth = true);
+	struct uisystem;
 
-	bool clickable = true;
+	class uiobject {
+	public:
+		uiobject();
 
-	vector4 size;
-	vector4 pos;
+		static std::shared_ptr<uiobject> create(uisystem& sys);
+		void add(uiobject* child);
+		void sort();
+		void set_image(std::string s, bool smooth = true);
 
-	float visibility;
-	float roundness;
+		void update(sf::RenderTarget& win, const uisystem& ui_sys);
+		void draw(sf::RenderTarget& win, const uisystem& ui_sys);
 
-	color_composition background_color;
+	public:
+		bool clickable = true;
 
-	color_composition border_color;
-	float border_size;
-	float padding;
+		vector4 size;
+		vector4 pos;
 
-	int rotation;
+		float visibility;
+		float roundness;
 
-	int id;
-	int z_index = 0;
-	int global_z_index = 0;
-	std::string name;
+		color_composition background_color;
+		color_composition border_color;
+		float border_size;
+		padding_t padding{ 0.0f, 0.0f, 0.0f, 0.0f };
 
-	sf::Vector2f real_size;
-	sf::Vector2f real_pos;
-	sf::Vector2f absolute_pos;
+		int rotation;
 
-	float shadow_size;
-	sf::Vector2f shadow_offset;
-	sf::Color shadow_color;
+		int id;
+		int z_index = 0;
+		std::string name;
 
-	layout layout_type = layout::none;
-	sf::Vector2f flex_padding;
+		sf::Vector2f real_size;
+		sf::Vector2f real_pos;
+		sf::Vector2f absolute_pos;
 
-	sf::Image img;
-	sf::Sprite sprite;
-	sf::RenderTexture render_tex;
+		float shadow_size;
+		sf::Vector2f shadow_offset;
+		sf::Color shadow_color;
 
-	sf::Texture background_image;
-	std::string image_path;
-	sf::Sprite image_sprite;
-	bool repeated;
-	sf::Vector2f image_offset{ 0.f, 0.f };
-	sf::Vector2f image_scale{ 1.f, 1.f };
+		layout layout_type = layout::none;
+		sf::Vector2f flex_padding;
 
-	float aspect_ratio = 0.0f;
-	axis dominant_axis = axis::width;
+		sf::Image img;
+		sf::Sprite sprite;
+		sf::RenderTexture render_tex;
 
-	float min_w = 0.0f;
-	float min_h = 0.0f; 
-	axis dominant_padding_axis = axis::width;
+		sf::Texture background_image;
+		std::string image_path;
+		sf::Sprite image_sprite;
+		bool repeated;
+		sf::Vector2f image_offset{ 0.f, 0.f };
+		sf::Vector2f image_scale{ 1.f, 1.f };
 
-	std::string text_content = "";
-	sf::Color text_color;
-	sf::Color text_border_color;
-	float text_border_size = 0;
-	sf::Text::Style text_style = sf::Text::Style::Regular;
-	std::string font_path = "";
-	sf::Font font;
-	float text_size = 1.f;
+		float aspect_ratio = 0.0f;
+		axis dominant_axis = axis::width;
 
-	text_align_x align_x = text_align_x::center;
-	text_align_y align_y = text_align_y::center;
-	bool text_wrap = false;
+		float min_w = 0.0f;
+		float min_h = 0.0f;
+		axis dominant_padding_axis = axis::width;
 
-	uiobject* parent;
-	std::vector<uiobject*> children;
-};
+		std::string text_content = "";
+		sf::Color text_color;
+		sf::Color text_border_color = sf::Color::Transparent;
+		float text_border_size = 0;
+		sf::Text::Style text_style = sf::Text::Style::Regular;
+		std::string font_path = "";
+		sf::Font font;
+		float text_size = 1.f;
+		bool font_loaded = false;
+		std::string wrapped_str;
+		sf::Text text;
 
-enum class event_t {
-	mousedown,
-	mouseup,
-	scrollup,
-	scrolldown,
-	hover,
-	none
-};
+		text_align_x align_x = text_align_x::center;
+		text_align_y align_y = text_align_y::center;
+		bool text_wrap = false;
 
-struct event {
-	event_t type = event_t::none;
-	mousebutton button = mousebutton::none;
-	sf::Vector2f mouse_pos{ 0.f, 0.f };
-	uiobject* object = nullptr;
-};
+		uiobject* parent;
+		std::vector<uiobject*> children;
+	};
 
-extern std::vector<std::shared_ptr<uiobject>> ui_objects;
+	enum class event_t {
+		mousedown,
+		mouseup,
+		scrollup,
+		scrolldown,
+		hover,
+		none
+	};
 
-void draw(sf::RenderTarget& win);
-void sort();
+	struct event {
+		event_t type = event_t::none;
+		mousebutton button = mousebutton::none;
+		sf::Vector2f mouse_pos{ 0.f, 0.f };
+		uiobject* object = nullptr;
+	};
 
-event check_events(sf::Event& ev, sf::RenderWindow& win);
+	struct uisystem {
+		std::vector<std::shared_ptr<uiobject>> objects;
+
+		void draw(sf::RenderTarget& win);
+		void sort();
+		void update_all(sf::RenderTarget& win);
+
+		event check_events(sf::Event& ev, sf::RenderWindow& win);
+
+		sf::Vector2f window_size;
+	};
+
+}

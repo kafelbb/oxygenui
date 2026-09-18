@@ -5,9 +5,9 @@
 #include "oxygenui-lib/oxygenui.h"
 #include "uithing.h"
 
-void update(sf::RenderWindow& win) {
+void display(sf::RenderWindow& win) {
     win.clear({ 1,0,0 });
-    draw(win);
+    sys.draw(win);
     win.display();
 }
 
@@ -27,12 +27,12 @@ void start(sf::RenderWindow& win) {
     cursor_arrow.loadFromSystem(sf::Cursor::Arrow);
     cursor_hand.loadFromSystem(sf::Cursor::Hand);
 
-    update(win);
-    update(win);
+    sys.update_all(win);
+    display(win);
+    sys.update_all(win);
 
     while (win.isOpen()) {
         dt = clock.restart().asSeconds();
-        updating = false;
         while (win.pollEvent(ev)) {
             if (ev.type == sf::Event::Closed) {
                 win.close();
@@ -40,20 +40,20 @@ void start(sf::RenderWindow& win) {
             if (ev.type == sf::Event::Resized) {
                 sf::FloatRect visibleArea(0.f, 0.f, static_cast<float>(ev.size.width), static_cast<float>(ev.size.height));
                 win.setView(sf::View(visibleArea));
-                updating = true;
+                sys.update_all(win);
             }
 
-            event e = check_events(ev, win);
+            oxyui::event e = sys.check_events(ev, win);
 
             if (e.object) {
                 if (e.object->name == "mid") {
-                    if (e.type == event_t::hover) {
+                    if (e.type == oxyui::event_t::hover) {
                         win.setMouseCursor(cursor_hand);
                     }
 
-                    if (e.type == event_t::mousedown) {
+                    if (e.type == oxyui::event_t::mousedown) {
                         e.object->visibility -= 0.15f;
-                        updating = true;
+                        //e.object->update(win);
                     }
                 }
                 else {
@@ -66,13 +66,13 @@ void start(sf::RenderWindow& win) {
 
         x -= 16 * dt;
         y += 16 * dt;
-        ui_objects[0]->image_offset = { x,y };
+        sys.objects[0]->image_offset = { x,y };
 
-        update(win);
+        display(win);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    ui_objects.clear();
+    sys.objects.clear();
 }
 
 
