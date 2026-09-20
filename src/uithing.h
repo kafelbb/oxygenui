@@ -99,7 +99,7 @@ void init_ui() {
 	grey1->background_color.content.push_back(gr2);
 
 	auto grey2 = oxyui::uiobject::create(sys);
-	grey2->size = { 0.75,0,0.7,0 };
+	grey2->size = { 0.75,0,0.85,0 };
 	grey2->layout_type = oxyui::layout::flex_y;
 	grey2->flex_padding = { 0.05,0.05 };
 	grey2->roundness = 0.03;
@@ -186,10 +186,11 @@ void init_ui() {
 	auto icon = oxyui::uiobject::create(sys);
 	icon->background_color.content.push_back(tr);
 	icon->size = { 1,0,1,0 };
-	icon->padding = { 0.01, 0.01, 0.01, 0.01 };
+	icon->padding = { 0.0175, 0.0175, 0.0175, 0.0175 };
 	icon->set_image("res/icon.png", true);
 	icon->aspect_ratio = 1;
 	icon->dominant_axis = oxyui::axis::height;
+	icon->dominant_padding_axis = oxyui::axis::height;
 
 	auto mid2 = oxyui::uiobject::create(sys);
 	mid2->size = { 1,0,1,0 };
@@ -204,7 +205,7 @@ void init_ui() {
 	about_text->background_color.content.push_back(tr);
 	about_text->text_color = sf::Color::White;
 	about_text->text_size = 0.025;
-	about_text->text_content = "oxygenui is a crossplatform, simple and intuitive GUI library that brings the UI development experience of CSS and Roblox Studio into C++ / SFML.\nno strict, boring af standard window - forms(like in GTK / Qt), only pure creative freedom!";
+	about_text->text_content = "oxygenui is a crossplatform, simple and intuitive GUI library that brings the UI development experience of CSS and Roblox Studio into C++ / SFML.\nno strict, boring af standard window - forms (like in GTK / Qt), only pure creative freedom!";
 	about_text->text_wrap = true;
 	about_text->dominant_axis = oxyui::axis::height;
 	about_text->font_path = "res/fonts/Montserrat-SemiBold.ttf";
@@ -222,15 +223,90 @@ void init_ui() {
 	gitbtn->background_color.content.push_back(prpl1);
 	gitbtn->background_color.content.push_back(prpl2);
 	gitbtn->roundness = 0.015;
+	gitbtn->shadow_color = sf::Color(0, 0, 0, 50);
+	gitbtn->shadow_size = 0.025f;
+	gitbtn->shadow_offset = { 0,0 };
+	gitbtn->name = "git";
+
+	auto wikibtn = oxyui::uiobject::create(sys);
+	wikibtn->size = { 1,0,1,0 };
+	wikibtn->background_color.content.push_back(wh);
+	wikibtn->background_color.content.push_back(grey);
+	wikibtn->roundness = 0.015;
+	wikibtn->shadow_color = sf::Color(0, 0, 0, 50);
+	wikibtn->shadow_size = 0.025f;
+	wikibtn->shadow_offset = { 0,0 };
+	wikibtn->name = "wiki";
+
+	auto demobtn = oxyui::uiobject::create(sys);
+	demobtn->size = { 1,0,1,0 };
+	demobtn->background_color.content.push_back(wh);
+	demobtn->background_color.content.push_back(grey);
+	demobtn->roundness = 0.015;
+	demobtn->shadow_color = sf::Color(0, 0, 0, 50);
+	demobtn->shadow_size = 0.025f;
+	demobtn->shadow_offset = { 0,0 };
+	demobtn->name = "demo";
 
 	auto btnfrm = oxyui::uiobject::create(sys);
 	btnfrm->size = { 1,0,1,0 };
 	btnfrm->padding = { 0.005,0.005,0.005,0.005 };
 	btnfrm->background_color.content.push_back(tr);
 	btnfrm->layout_type = oxyui::layout::flex_y;
-	btnfrm->flex_padding = { 0.05, 0.05 };
+	btnfrm->flex_padding = { 0.025, 0.025 };
+
+	auto text_github = oxyui::uiobject::create(sys);
+	text_github->size = { 1,0,1,0 };
+	text_github->background_color.content.push_back(tr);
+	text_github->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	text_github->text_content = "github";
+	text_github->text_color = sf::Color::White;
+	text_github->text_size = 0.025f;
+	text_github->padding = { 0.01, 0.01, 0.01, 0.01 };
+	text_github->dominant_axis = oxyui::axis::height;
+	text_github->align_x = oxyui::text_align_x::center;
+	text_github->align_y = oxyui::text_align_y::center;
+	text_github->text_border_color = sf::Color::Transparent;
+	text_github->text_style = sf::Text::Regular;
+	text_github->clickable = false;
+
+	auto text_wiki = oxyui::uiobject::create(sys);
+	text_wiki->size = { 1,0,1,0 };
+	text_wiki->background_color.content.push_back(tr);
+	text_wiki->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	text_wiki->text_content = "wiki";
+	text_wiki->text_color = sf::Color::Black;
+	text_wiki->text_size = 0.025f;
+	text_wiki->padding = { 0.01, 0.01, 0.01, 0.01 };
+	text_wiki->dominant_axis = oxyui::axis::height;
+	text_wiki->align_x = oxyui::text_align_x::center;
+	text_wiki->align_y = oxyui::text_align_y::center;
+	text_wiki->text_border_color = sf::Color::Transparent;
+	text_wiki->text_style = sf::Text::Regular;
+	text_wiki->clickable = false;
+
+	auto text_demo = oxyui::uiobject::create(sys);
+	text_demo->size = { 1,0,1,0 };
+	text_demo->background_color.content.push_back(tr);
+	text_demo->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	text_demo->text_content = "demo";
+	text_demo->text_color = sf::Color::Black;
+	text_demo->text_size = 0.025f;
+	text_demo->padding = { 0.01, 0.01, 0.01, 0.01 };
+	text_demo->dominant_axis = oxyui::axis::height;
+	text_demo->align_x = oxyui::text_align_x::center;
+	text_demo->align_y = oxyui::text_align_y::center;
+	text_demo->text_border_color = sf::Color::Transparent;
+	text_demo->text_style = sf::Text::Regular;
+	text_demo->clickable = false;
+
+	gitbtn->add(text_github.get());
+	wikibtn->add(text_wiki.get());
+	demobtn->add(text_demo.get());
 
 	btnfrm->add(gitbtn.get());
+	btnfrm->add(wikibtn.get());
+	btnfrm->add(demobtn.get());
 	black2->add(btnfrm.get());
 
 	bar->add(icon.get());

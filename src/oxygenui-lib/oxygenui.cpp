@@ -5,6 +5,133 @@
 
 namespace oxyui {
 
+    float ease_linear(float t) { return t; }
+
+    float ease_quad(float t, ease_type type) {
+        if (type == ease_type::in) return t * t;
+        if (type == ease_type::out) return t * (2.0f - t);
+        return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
+    }
+
+    float ease_cubic(float t, ease_type type) {
+        if (type == ease_type::in) return t * t * t;
+        if (type == ease_type::out) { t--; return t * t * t + 1.0f; }
+        return t < 0.5f ? 4.0f * t * t * t : (t - 1.0f) * (2.0f * t - 2.0f) * (2.0f * t - 2.0f) + 1.0f;
+    }
+
+    float ease_quart(float t, ease_type type) {
+        if (type == ease_type::in) return t * t * t * t;
+        if (type == ease_type::out) { t--; return 1.0f - t * t * t * t; }
+        return t < 0.5f ? 8.0f * t * t * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 4.0f) / 2.0f;
+    }
+
+    float tween::get_eased_value(float alpha) {
+        alpha = std::max(0.0f, std::min(1.0f, alpha));
+        switch (description.easing_style) {
+        case ease_style::quad:  return ease_quad(alpha, description.easing_type);
+        case ease_style::cubic: return ease_cubic(alpha, description.easing_type);
+        case ease_style::quart: return ease_quart(alpha, description.easing_type);
+        case ease_style::step:  return alpha >= 1.0f ? 1.0f : 0.0f;
+        case ease_style::linear:
+        default:                return ease_linear(alpha);
+        }
+    }
+
+    // --- СИСТЕМА ДИНАМИЧЕСКИХ СВОЙСТВ ---
+    float tween::get_current_property_value(const std::string& prop) {
+        if (!target) return 0.0f;
+        if (prop == "pos.x_scale")  return target->pos.x_scale;
+        if (prop == "pos.x_offset") return target->pos.x_offset;
+        if (prop == "pos.y_scale")  return target->pos.y_scale;
+        if (prop == "pos.y_offset") return target->pos.y_offset;
+        if (prop == "size.x_scale") return target->size.x_scale;
+        if (prop == "size.x_offset") return target->size.x_offset;
+        if (prop == "size.y_scale") return target->size.y_scale;
+        if (prop == "size.y_offset") return target->size.y_offset;
+        if (prop == "visibility")   return target->visibility;
+        if (prop == "roundness")    return target->roundness;
+        if (prop == "border_size")  return target->border_size;
+        if (prop == "rotation")     return static_cast<float>(target->rotation);
+        if (prop == "shadow_size")  return target->shadow_size;
+        return 0.0f;
+    }
+
+    void tween::apply_property(const std::string& prop, float value) {
+        if (!target) return;
+        if (prop == "pos.x_scale")  target->pos.x_scale = value;
+        else if (prop == "pos.x_offset") target->pos.x_offset = value;
+        else if (prop == "pos.y_scale")  target->pos.y_scale = value;
+        else if (prop == "pos.y_offset") target->pos.y_offset = value;
+        else if (prop == "size.x_scale") target->size.x_scale = value;
+        else if (prop == "size.x_offset") target->size.x_offset = value;
+        else if (prop == "size.y_scale")  target->size.y_scale = value;
+        else if (prop == "size.y_offset") target->size.y_offset = value;
+        else if (prop == "visibility")   target->visibility = value;
+        else if (prop == "roundness")    target->roundness = value;
+        else if (prop == "border_size")  target->border_size = value;
+        else if (prop == "rotation")     target->rotation = static_cast<int>(std::round(value));
+        else if (prop == "shadow_size")  target->shadow_size = value;
+    }
+
+    // --- РЕАЛИЗАЦИЯ МЕТОДОВ КЛАССА TWEEN ---
+    std::shared_ptr<tween> tween::create(uisystem& sys, uiobject* target, tween_info info, std::map<std::string, float> target_properties) {
+        auto t = std::make_shared<tween>();
+        t->target = target;
+        t->description = info;
+        t->goal_properties = target_properties;
+
+        sys.tweens.push_back(t); // Регистрируем в глобальной системе
+        return t;
+    }
+
+    void tween::play() {
+        if (!target || description.target_time <= 0.0f) return;
+
+        // Захватываем начальные состояния ТОЛЬКО для тех свойств, которые изменяем
+        initial_properties.clear();
+        for (const auto& pair : goal_properties) {
+            initial_properties[pair.first] = get_current_property_value(pair.first);
+        }
+
+        current_time = 0.0f;
+        playing = true;
+        finished = false;
+    }
+
+    void tween::pause() {
+        playing = !playing; // Переключатель пауза/продолжить
+    }
+
+    void tween::stop() {
+        playing = false;
+        current_time = 0.0f;
+    }
+
+    void tween::update(float dt) {
+        if (!playing || finished) return;
+
+        current_time += dt;
+        float alpha = current_time / description.target_time;
+
+        if (alpha >= 1.0f) {
+            alpha = 1.0f;
+            playing = false;
+            finished = true;
+        }
+
+        float eased_alpha = get_eased_value(alpha);
+
+        // Линейная интерполяция (LERP) для каждого зарегистрированного свойства
+        for (const auto& pair : goal_properties) {
+            const std::string& prop = pair.first;
+            float start_val = initial_properties[prop];
+            float end_val = pair.second;
+
+            float current_val = start_val + (end_val - start_val) * eased_alpha;
+            apply_property(prop, current_val);
+        }
+    }
+
     uiobject::uiobject()
         : size{ 0, 100, 0, 100 },
         pos{ 0, 0, 0, 0 },
@@ -21,6 +148,24 @@ namespace oxyui {
         flex_padding(0.f, 0.f),
         parent(nullptr)
     {
+    }
+
+    uiobject* uisystem::get_by_name(const std::string& target_name) {
+        for (const auto& obj : objects) {
+            if (obj && obj->name == target_name) {
+                return obj.get();
+            }
+        }
+        return nullptr; // Если ничего не нашли
+    }
+
+    uiobject* uisystem::get_by_id(int target_id) {
+        for (const auto& obj : objects) {
+            if (obj && obj->id == target_id) {
+                return obj.get();
+            }
+        }
+        return nullptr;
     }
 
     void uiobject::set_image(std::string s, bool smooth) {
@@ -135,15 +280,19 @@ namespace oxyui {
         }
 
         if (o->parent->layout_type == layout::flex_x) {
-            // --- МАТЕМАТИКА GAP ДЛЯ ГОРИЗОНТАЛЬНОЙ ОСИ ---
-            // flex_padding теперь берется в масштабе от ширины родителя и работает как зазор (gap)
-            float gap_px = o->parent->flex_padding.x * w;
+            // --- ИСПРАВЛЕНИЕ: Горизонтальный зазор зависит СТРОГО от ширины окна ---
+            float opora = 0;
+            if (o->dominant_flex_padding_axis == axis::width) {
+                opora = ui_sys.window_size.x;
+            }
+            else {
+                opora = ui_sys.window_size.y;
+            }
+            float gap_px = o->parent->flex_padding.x * opora;
 
-            // Всего промежутков между элементами будет ровно (children_count - 1)
             float total_gaps_w = (children_count > 1) ? static_cast<float>(children_count - 1) * gap_px : 0.0f;
             float available_for_items = inner_w - total_gaps_w;
 
-            // Элементы начинают выстраиваться строго от края левого паддинга родителя
             float current_fx = p_pad_l;
             float unit_w = (total_scale_x > 0.0f) ? available_for_items / total_scale_x : 0.0f;
 
@@ -165,23 +314,19 @@ namespace oxyui {
                     fw = child_w;
                     fh = child_h;
                     fx = current_fx;
-                    fy = p_pad_t; // Элемент по вертикали прижат к верхней границе полезной области родителя
+                    fy = p_pad_t;
                     break;
                 }
-                // Прибавляем ширину текущего ребенка и зазор DO следующего элемента
                 current_fx += child_w + gap_px;
             }
         }
         else if (o->parent->layout_type == layout::flex_y) {
-            // --- МАТЕМАТИКА GAP ДЛЯ ВЕРТИКАЛЬНОЙ ОСИ ---
-            // flex_padding теперь берется в масштабе от высоты (или ширины) родителя и работает как зазор (gap)
-            float gap_px = o->parent->flex_padding.y * h;
+            // --- ИСПРАВЛЕНИЕ: Вертикальный зазор зависит СТРОГО от высоты окна ---
+            float gap_px = o->parent->flex_padding.y * ui_sys.window_size.y;
 
-            // Всего промежутков между элементами по вертикали: (children_count - 1)
             float total_gaps_h = (children_count > 1) ? static_cast<float>(children_count - 1) * gap_px : 0.0f;
             float available_for_items = inner_h - total_gaps_h;
 
-            // Элементы начинают выстраиваться строго от края верхнего паддинга родителя
             float current_fy = p_pad_t;
             float unit_h = (total_scale_y > 0.0f) ? available_for_items / total_scale_y : 0.0f;
 
@@ -225,11 +370,10 @@ namespace oxyui {
                 if (p_ch[i] == o) {
                     fw = child_w;
                     fh = child_h;
-                    fx = p_pad_l; // Элемент по горизонтали прижат к левой границе полезной области родителя
+                    fx = p_pad_l;
                     fy = current_fy;
                     break;
                 }
-                // Прибавляем высоту текущего ребенка и зазор DO следующего элемента
                 current_fy += child_h + gap_px;
             }
         }
@@ -237,15 +381,14 @@ namespace oxyui {
             return get_dimensions_and_pos(o, win_w, win_h, ui_sys);
         }
 
+        // Внутренние паддинги
         float child_pad_basis = (o->dominant_padding_axis == axis::width) ? ui_sys.window_size.x : ui_sys.window_size.y;
         float c_pad_l = o->padding.left * child_pad_basis;
-        float c_pad_r = o->padding.right * child_pad_basis;
         float c_pad_t = o->padding.top * child_pad_basis;
-        float c_pad_b = o->padding.bottom * child_pad_basis;
 
         if (o->aspect_ratio > 0.0f) {
-            // Для объектов с жестким соотношением сторон (иконок) вычитание паддингов нужно,
-            // чтобы они сохраняли квадратную форму контента
+            float c_pad_r = o->padding.right * child_pad_basis;
+            float c_pad_b = o->padding.bottom * child_pad_basis;
             fw -= (c_pad_l + c_pad_r + 1.0f);
             fh -= (c_pad_t + c_pad_b + 1.0f);
 
@@ -255,14 +398,10 @@ namespace oxyui {
             else if (o->dominant_axis == axis::width) {
                 fh = fw / o->aspect_ratio;
             }
-
             fx += c_pad_l;
             fy += c_pad_t;
         }
         else {
-            // --- ДЛЯ ОБЫЧНЫХ ЭЛЕМЕНТОВ (Кнопки, Плашки, Текст) ---
-            // Просто компенсируем 1 пиксель округления текстуры для идеального стыка шейдеров,
-            // но НЕ вычитаем паддинги повторно!
             if (fw > 1.0f) fw -= 1.0f;
             if (fh > 1.0f) fh -= 1.0f;
         }
@@ -271,7 +410,8 @@ namespace oxyui {
         if (fh < o->min_h) fh = o->min_h;
 
         return { fx, fy, fw, fh };
-}
+    }
+
 
     sf::Color get_gradient_color(const color_composition& comp, float targetPos, float alphaMultiplier) {
         if (comp.content.empty()) {
@@ -806,13 +946,33 @@ namespace oxyui {
         }
     }
 
-    void uisystem::update_all(sf::RenderTarget& win) {
+    void uisystem::update_uiobjects(sf::RenderTarget& win) {
         sf::Vector2u size = win.getSize();
         window_size = { static_cast<float>(size.x), static_cast<float>(size.y) };
 
         for (const auto& o : objects) {
             if (o->parent == nullptr) {
                 o->update(win, *this);
+            }
+        }
+    }
+
+    void uisystem::update_tweens() {
+        static sf::Clock delta_clock;
+        float dt = delta_clock.restart().asSeconds();
+
+        // 1. Апдейтим и очищаем завершенные твины
+        for (auto it = tweens.begin(); it != tweens.end();) {
+            if (*it) {
+                (*it)->update(dt);
+            }
+
+            // Очищаем уничтоженные/ненужные твины, если shared_ptr больше нигде не удерживается
+            if (it->use_count() == 1 && (*it)->is_finished()) {
+                it = tweens.erase(it);
+            }
+            else {
+                ++it;
             }
         }
     }
@@ -825,28 +985,75 @@ namespace oxyui {
         }
     }
 
+    void calculate_gzindex(uiobject* obj, int& current_global_index) {
+        if (!obj) return;
+
+        // Сначала присваиваем глобальный индекс самому родителю
+        obj->global_zindex = current_global_index++;
+
+        // Сортируем детей этого объекта по их локальному z_index перед обходом
+        if (!obj->children.empty()) {
+            std::sort(obj->children.begin(), obj->children.end(), [](const uiobject* a, const uiobject* b) {
+                return a->z_index < b->z_index;
+                });
+
+            // Рекурсивно идем вглубь по отсортированным детям
+            for (uiobject* child : obj->children) {
+                calculate_gzindex(child, current_global_index);
+            }
+        }
+    }
+
     void uisystem::sort() {
         if (objects.empty()) return;
-        auto root_end = std::stable_partition(objects.begin(), objects.end(), [](const auto& obj) {
-            return obj->parent == nullptr;
-            });
-        std::sort(objects.begin(), root_end, [](const auto& a, const auto& b) {
+
+        // 1. Собираем все корневые элементы (у которых parent == nullptr)
+        std::vector<uiobject*> roots;
+        for (const auto& obj : objects) {
+            if (obj->parent == nullptr) {
+                roots.push_back(obj.get());
+            }
+        }
+
+        // 2. Сортируем корневые элементы между собой по их локальному z_index
+        std::sort(roots.begin(), roots.end(), [](const uiobject* a, const uiobject* b) {
             return a->z_index < b->z_index;
+            });
+
+        // 3. Запускаем рекурсивный сквозной подсчет глобального z-индекса по всему дереву
+        int current_global_index = 0;
+        for (uiobject* root : roots) {
+            calculate_gzindex(root, current_global_index);
+        }
+
+        // 4. Теперь сортируем НАШ ПЛОСКИЙ ВЕКТОР СИСТЕМЫ по сгенерированному global_zindex.
+        // Элементы, которые рисуются позже (имеют больший global_zindex), окажутся в конце вектора.
+        std::sort(objects.begin(), objects.end(), [](const std::shared_ptr<uiobject>& a, const std::shared_ptr<uiobject>& b) {
+            return a->global_zindex < b->global_zindex;
             });
     }
 
     event uisystem::check_events(sf::Event& ev, sf::RenderWindow& win) {
         sf::Vector2f point = win.mapPixelToCoords(sf::Mouse::getPosition(win));
+
+        // Так как плоский вектор objects теперь ИДЕАЛЬНО отсортирован по возрастанию global_zindex,
+        // мы можем просто пройтись по нему В ОБРАТНОМ НАПРАВЛЕНИИ (от самых верхних объектов на экране к нижним).
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             uiobject* o = it->get();
-            if (o->visibility <= 0.0f) continue;
+
+            // Проверяем видимость и флаг кликабельности (clickable)
+            if (o->visibility <= 0.0f || !o->clickable) continue;
+
+            // Проверка попадания в рамки absolute_pos за O(1)
             if (point.x >= o->absolute_pos.x && point.x <= o->absolute_pos.x + o->real_size.x &&
                 point.y >= o->absolute_pos.y && point.y <= o->absolute_pos.y + o->real_size.y) {
+
                 event e;
                 e.object = o;
                 e.mouse_pos = point;
                 e.type = event_t::hover;
                 e.button = mousebutton::none;
+
                 if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
                     e.type = event_t::mousedown;
                     e.button = mousebutton::left;
@@ -867,6 +1074,7 @@ namespace oxyui {
                 return e;
             }
         }
+
         event empty_e;
         empty_e.type = event_t::none;
         empty_e.button = mousebutton::none;

@@ -104,6 +104,7 @@ namespace oxyui {
 
 		int id;
 		int z_index = 0;
+		int global_zindex = 0;
 		std::string name;
 
 		sf::Vector2f real_size;
@@ -134,6 +135,7 @@ namespace oxyui {
 		float min_w = 0.0f;
 		float min_h = 0.0f;
 		axis dominant_padding_axis = axis::width;
+		axis dominant_flex_padding_axis = axis::width;
 
 		std::string text_content = "";
 		sf::Color text_color;
@@ -155,6 +157,8 @@ namespace oxyui {
 		std::vector<uiobject*> children;
 	};
 
+	class tween;
+
 	enum class event_t {
 		mousedown,
 		mouseup,
@@ -173,14 +177,70 @@ namespace oxyui {
 
 	struct uisystem {
 		std::vector<std::shared_ptr<uiobject>> objects;
+		std::vector<std::shared_ptr<tween>> tweens;
 
 		void draw(sf::RenderTarget& win);
 		void sort();
-		void update_all(sf::RenderTarget& win);
+		void update_uiobjects(sf::RenderTarget& win);
+		void update_tweens();
+
+		uiobject* get_by_name(const std::string& target_name);
+		uiobject* get_by_id(int target_id);
 
 		event check_events(sf::Event& ev, sf::RenderWindow& win);
 
 		sf::Vector2f window_size;
+	};
+
+	enum class ease_type {
+		in,
+		out,
+		inout
+	};
+
+	enum class ease_style {
+		linear,
+		quad,
+		quart,
+		cubic,
+		step
+	};
+
+	// --- Внутри namespace oxyui ---
+
+	struct tween_info {
+		float target_time = 1.0f;                        // Длительность в секундах
+		ease_style easing_style = ease_style::linear;
+		ease_type easing_type = ease_type::out;
+	};
+
+	class tween {
+	public:
+		static std::shared_ptr<tween> create(uisystem& sys, uiobject* target, tween_info info, std::map<std::string, float> target_properties);
+
+		void play();
+		void pause();
+		void stop();
+
+		void update(float dt);
+
+		bool is_playing() const { return playing; }
+		bool is_finished() const { return finished; }
+
+	private:
+		bool playing = false;
+		bool finished = false;
+		float current_time = 0.0f;
+
+		uiobject* target = nullptr;
+		tween_info description;
+
+		std::map<std::string, float> goal_properties;
+		std::map<std::string, float> initial_properties;
+
+		float get_eased_value(float alpha);
+		void apply_property(const std::string& prop, float value);
+		float get_current_property_value(const std::string& prop);
 	};
 
 }
