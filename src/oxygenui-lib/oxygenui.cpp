@@ -4,7 +4,7 @@
 
 
 namespace oxyui {
-
+    //потом уже вынесу твины и объекты в отдельные хедеры, я ебал ща это делать
     float ease_linear(float t) { return t; }
 
     float ease_quad(float t, ease_type type) {
@@ -37,7 +37,6 @@ namespace oxyui {
         }
     }
 
-    // --- СИСТЕМА ДИНАМИЧЕСКИХ СВОЙСТВ ---
     float tween::get_current_property_value(const std::string& prop) {
         if (!target) return 0.0f;
         if (prop == "pos.x_scale")  return target->pos.x_scale;
@@ -73,21 +72,19 @@ namespace oxyui {
         else if (prop == "shadow_size")  target->shadow_size = value;
     }
 
-    // --- РЕАЛИЗАЦИЯ МЕТОДОВ КЛАССА TWEEN ---
     std::shared_ptr<tween> tween::create(uisystem& sys, uiobject* target, tween_info info, std::map<std::string, float> target_properties) {
         auto t = std::make_shared<tween>();
         t->target = target;
         t->description = info;
         t->goal_properties = target_properties;
 
-        sys.tweens.push_back(t); // Регистрируем в глобальной системе
+        sys.tweens.push_back(t);
         return t;
     }
 
     void tween::play() {
         if (!target || description.target_time <= 0.0f) return;
 
-        // Захватываем начальные состояния ТОЛЬКО для тех свойств, которые изменяем
         initial_properties.clear();
         for (const auto& pair : goal_properties) {
             initial_properties[pair.first] = get_current_property_value(pair.first);
@@ -99,7 +96,7 @@ namespace oxyui {
     }
 
     void tween::pause() {
-        playing = !playing; // Переключатель пауза/продолжить
+        playing = !playing;
     }
 
     void tween::stop() {
@@ -121,7 +118,6 @@ namespace oxyui {
 
         float eased_alpha = get_eased_value(alpha);
 
-        // Линейная интерполяция (LERP) для каждого зарегистрированного свойства
         for (const auto& pair : goal_properties) {
             const std::string& prop = pair.first;
             float start_val = initial_properties[prop];
@@ -156,7 +152,7 @@ namespace oxyui {
                 return obj.get();
             }
         }
-        return nullptr; // Если ничего не нашли
+        return nullptr;
     }
 
     uiobject* uisystem::get_by_id(int target_id) {
@@ -168,16 +164,58 @@ namespace oxyui {
         return nullptr;
     }
 
+
+
     void uiobject::set_image(std::string s, bool smooth) {
         image_path = s;
         if (img.loadFromFile(s)) {
             img.flipVertically();
             background_image.loadFromImage(img);
             background_image.setSmooth(smooth);
+            background_image.generateMipmap();
             image_sprite.setTexture(background_image);
+            image_loaded = true;
         }
         else {
-            std::cerr << "can't load " << s << " as a background_image" << std::endl;
+            std::cerr << "can't load " << s << " as a background_image for " << name << std::endl;
+            image_loaded = false;
+        }
+    }
+
+    void uiobject::set_image_from_mem(const unsigned char* data, std::size_t size, bool smooth) {
+        image_path = "@memory";
+        if (img.loadFromMemory(data, size)) {
+            img.flipVertically();
+            background_image.loadFromImage(img);
+            background_image.setSmooth(smooth);
+            background_image.generateMipmap();
+            image_sprite.setTexture(background_image);
+            image_loaded = true;
+        }
+        else {
+            std::cerr << "can't load img from mem as a background_image for "<< name << std::endl;
+            image_loaded = false;
+        }
+    }
+
+    void uiobject::set_font(std::string s) {
+        font_path = s;
+        if (!font.loadFromFile(s)) {
+            std::cerr << "can't load font from " << s << " as font for " << name << std::endl;
+            font_loaded = false;
+        }
+        else {
+            font_loaded = true;
+        }
+    }
+    void uiobject::set_font_from_mem(const unsigned char* data, std::size_t size) {
+        font_path = "@memory";
+        if (!font.loadFromMemory(data, size)) {
+            std::cerr << "can't load font from mem as font for " << name << std::endl;
+            font_loaded = false;
+        }
+        else {
+            font_loaded = true;
         }
     }
 
@@ -199,6 +237,8 @@ namespace oxyui {
             return a->z_index < b->z_index;
             });
     }
+
+
 
     void apply_aspect_ratio(uiobject* o, float& real_w, float& real_h) {
         if (o->aspect_ratio <= 0.0f) return;
@@ -225,7 +265,6 @@ namespace oxyui {
         float w = (parent_w * o->size.x_scale + o->size.x_offset) - (pad_l + pad_r);
         float h = (parent_h * o->size.y_scale + o->size.y_offset) - (pad_t + pad_b);
 
-        // --- ИСПРАВЛЕНИЕ: Применяем aspect_ratio СТРОГО с учетом вычтенных паддингов ---
         if (o->aspect_ratio > 0.0f) {
             if (o->dominant_axis == axis::width) {
                 h = w / o->aspect_ratio;
@@ -280,20 +319,13 @@ namespace oxyui {
         }
 
         if (o->parent->layout_type == layout::flex_x) {
-            // --- ИСПРАВЛЕНИЕ: Горизонтальный зазор зависит СТРОГО от ширины окна ---
-            float opora = 0;
-            if (o->dominant_flex_padding_axis == axis::width) {
-                opora = ui_sys.window_size.x;
-            }
-            else {
-                opora = ui_sys.window_size.y;
-            }
+            float opora = (o->dominant_flex_padding_axis == axis::width) ? ui_sys.window_size.x : ui_sys.window_size.y;
             float gap_px = o->parent->flex_padding.x * opora;
 
             float total_gaps_w = (children_count > 1) ? static_cast<float>(children_count - 1) * gap_px : 0.0f;
             float available_for_items = inner_w - total_gaps_w;
 
-            float current_fx = p_pad_l;
+            float current_fx_float = p_pad_l;
             float unit_w = (total_scale_x > 0.0f) ? available_for_items / total_scale_x : 0.0f;
 
             for (int i = 0; i < children_count; ++i) {
@@ -310,24 +342,28 @@ namespace oxyui {
                 if (child_w < p_ch[i]->min_w) child_w = p_ch[i]->min_w;
                 if (child_h < p_ch[i]->min_h) child_h = p_ch[i]->min_h;
 
+                float next_fx_float = current_fx_float + child_w;
+
+                float snapped_start = std::round(current_fx_float);
+                float snapped_end = std::round(next_fx_float);
+
                 if (p_ch[i] == o) {
-                    fw = child_w;
-                    fh = child_h;
-                    fx = current_fx;
-                    fy = p_pad_t;
+                    fw = snapped_end - snapped_start;
+                    fh = std::round(child_h);
+                    fx = snapped_start;
+                    fy = std::round(p_pad_t);
                     break;
                 }
-                current_fx += child_w + gap_px;
+                current_fx_float = next_fx_float + gap_px;
             }
         }
         else if (o->parent->layout_type == layout::flex_y) {
-            // --- ИСПРАВЛЕНИЕ: Вертикальный зазор зависит СТРОГО от высоты окна ---
             float gap_px = o->parent->flex_padding.y * ui_sys.window_size.y;
 
             float total_gaps_h = (children_count > 1) ? static_cast<float>(children_count - 1) * gap_px : 0.0f;
             float available_for_items = inner_h - total_gaps_h;
 
-            float current_fy = p_pad_t;
+            float current_fy_float = p_pad_t;
             float unit_h = (total_scale_y > 0.0f) ? available_for_items / total_scale_y : 0.0f;
 
             float fixed_height_allocated = 0.0f;
@@ -367,21 +403,25 @@ namespace oxyui {
                 if (child_w < p_ch[i]->min_w) child_w = p_ch[i]->min_w;
                 if (child_h < p_ch[i]->min_h) child_h = p_ch[i]->min_h;
 
+                float next_fy_float = current_fy_float + child_h;
+
+                float snapped_start = std::round(current_fy_float);
+                float snapped_end = std::round(next_fy_float);
+
                 if (p_ch[i] == o) {
-                    fw = child_w;
-                    fh = child_h;
-                    fx = p_pad_l;
-                    fy = current_fy;
+                    fw = std::round(child_w);
+                    fh = snapped_end - snapped_start;
+                    fx = std::round(p_pad_l);
+                    fy = snapped_start;
                     break;
                 }
-                current_fy += child_h + gap_px;
+                current_fy_float = next_fy_float + gap_px;
             }
         }
         else if (o->parent->layout_type == layout::none) {
             return get_dimensions_and_pos(o, win_w, win_h, ui_sys);
         }
 
-        // Внутренние паддинги
         float child_pad_basis = (o->dominant_padding_axis == axis::width) ? ui_sys.window_size.x : ui_sys.window_size.y;
         float c_pad_l = o->padding.left * child_pad_basis;
         float c_pad_t = o->padding.top * child_pad_basis;
@@ -401,17 +441,12 @@ namespace oxyui {
             fx += c_pad_l;
             fy += c_pad_t;
         }
-        else {
-            if (fw > 1.0f) fw -= 1.0f;
-            if (fh > 1.0f) fh -= 1.0f;
-        }
 
         if (fw < o->min_w) fw = o->min_w;
         if (fh < o->min_h) fh = o->min_h;
 
         return { fx, fy, fw, fh };
     }
-
 
     sf::Color get_gradient_color(const color_composition& comp, float targetPos, float alphaMultiplier) {
         if (comp.content.empty()) {
@@ -505,7 +540,6 @@ namespace oxyui {
                 va[index++] = sf::Vertex(outerGlobal, vertexColor);
             }
         }
-        // ИСПРАВЛЕНО: Копируем конкретные вершины по индексам, а не весь объект va целиком
         va[index++] = va[0];
         va[index++] = va[1];
         win.draw(va);
@@ -556,7 +590,6 @@ namespace oxyui {
                 vaOuter[index++] = sf::Vertex(outerGlobal, outerColor);
             }
         }
-        // ИСПРАВЛЕНО
         vaOuter[index++] = vaOuter[0];
         vaOuter[index++] = vaOuter[1];
 
@@ -575,13 +608,11 @@ namespace oxyui {
                 vaInner[innerIndex++] = sf::Vertex(globalPoint, innerColor);
             }
         }
-        // ИСПРАВЛЕНО
         vaInner[innerIndex] = vaInner[1];
 
         win.draw(vaInner);
         win.draw(vaOuter);
     }
-
 
     sf::Shader* get_ui_shader() {
         static sf::Shader ui_shader;
@@ -648,6 +679,7 @@ namespace oxyui {
         }
         return ui_shader_loaded ? &ui_shader : nullptr;
     }
+
     std::string wrap_text(const std::string& str, float max_width, sf::Text& text_obj) {
         if (str.empty() || max_width <= 0.f) return str;
 
@@ -658,18 +690,15 @@ namespace oxyui {
         auto flush_word = [&]() {
             if (word.empty()) return;
 
-            // Проверяем, как будет выглядеть строка, если добавить слово
             std::string test_line = current_line.empty() ? word : current_line + " " + word;
             text_obj.setString(test_line);
 
-            // Если строка превысила максимальную ширину (с учетом отступов)
             if (text_obj.getLocalBounds().width > max_width) {
                 if (!current_line.empty()) {
                     result += current_line + "\n";
-                    current_line = word; // Слово уходит на новую строку
+                    current_line = word;
                 }
                 else {
-                    // Если даже ОДНО слово шире, чем max_width, принудительно оставляем его
                     result += word + "\n";
                     current_line = "";
                 }
@@ -699,7 +728,6 @@ namespace oxyui {
             result += current_line;
         }
 
-        // Убираем возможный лишний '\n' на конце
         if (!result.empty() && result.back() == '\n') {
             result.pop_back();
         }
@@ -714,18 +742,18 @@ namespace oxyui {
         return obj;
     }
 
-    void uiobject::update(sf::RenderTarget& win, const uisystem& ui_sys) { // <-- переименовали в ui_sys
+    void uiobject::update(sf::RenderTarget& win, const uisystem& ui_sys) {
         sf::Vector2u win_dim = win.getSize();
         float win_w = static_cast<float>(win_dim.x);
         float win_h = static_cast<float>(win_dim.y);
         float real_w, real_h, real_x, real_y;
 
         if (parent == nullptr) {
-            vec4 ass = get_dimensions_and_pos(this, win_w, win_h, ui_sys); // <-- ui_sys
+            vec4 ass = get_dimensions_and_pos(this, win_w, win_h, ui_sys);
             real_x = ass.x; real_y = ass.y; real_w = ass.z; real_h = ass.w;
         }
         else {
-            vec4 ass = get_dimensions_and_pos_by_flex(this, win_w, win_h, ui_sys); // <-- ui_sys
+            vec4 ass = get_dimensions_and_pos_by_flex(this, win_w, win_h, ui_sys);
             real_x = ass.x; real_y = ass.y; real_w = ass.z; real_h = ass.w;
         }
         if (real_w <= 0.f || real_h <= 0.f) return;
@@ -783,7 +811,7 @@ namespace oxyui {
 
 
         if (border_px > 0.0f && !border_color.content.empty()) {
-            float r_px = ui_sys.window_size.x * 0.5f * roundness; // <-- ui_sys
+            float r_px = ui_sys.window_size.x * 0.5f * roundness;
             sf::Vector2f inner_border_size = { real_size.x - border_px * 2.0f + 0.5f, real_size.y - border_px * 2.0f + 0.5f };
             sf::Vector2f inner_border_pos = { border_px - 0.25f, border_px - 0.25f };
             float inner_radius = std::max(0.0f, r_px - border_px);
@@ -791,24 +819,15 @@ namespace oxyui {
         }
 
         for (const auto& child : children) {
-            child->update(render_tex, ui_sys); // <-- ui_sys
+            child->update(render_tex, ui_sys);
         }
 
-        // --- Вставьте этот блок в самый конец метода uiobject::update ---
         if (!text_content.empty()) {
-            // Загружаем шрифт СТРОГО один раз
-            if (!font_loaded || font_path != font_path) {
-                if (font.loadFromFile(font_path)) {
-                    font_loaded = true;
-                }
-            }
-
             if (font_loaded) {
                 text.setFont(font);
                 text.setStyle(text_style);
                 text.setString(text_content);
 
-                // Считаем размер шрифта от window_size
                 float window_basis = (dominant_axis == axis::width) ? ui_sys.window_size.x : ui_sys.window_size.y;
                 float targetPixelSize = window_basis * text_size;
 
@@ -825,7 +844,6 @@ namespace oxyui {
                     }
                 }
 
-                // Перенос строк делаем ТОЖЕ только при обновлении геометрии
                 if (text_wrap) {
                     wrapped_str = wrap_text(text_content, real_size.x, text);
                     text.setString(wrapped_str);
@@ -848,14 +866,12 @@ namespace oxyui {
                 text.setPosition({ std::round(posX), std::round(posY) });
             }
         }
-        // -----------------------------------------------------------------
-
 
         render_tex.display();
         sprite.setTexture(render_tex.getTexture(), true);
     }
 
-    void uiobject::draw(sf::RenderTarget& win, const uisystem& ui_sys) { // <-- Принимаем ui_sys
+    void uiobject::draw(sf::RenderTarget& win, const uisystem& ui_sys) {
         if (visibility <= 0.0f) return;
         sf::Vector2u win_dim = win.getSize();
 
@@ -914,8 +930,6 @@ namespace oxyui {
             win.draw(sprite, states);
         }
 
-        // Отрисовка текста
-    // --- Внутри uiobject::draw заменяем весь старый блок текста на этот: ---
         if (!text_content.empty() && font_loaded) {
             sf::Vector2u win_dim = win.getSize();
             float win_w = static_cast<float>(win_dim.x);
@@ -924,7 +938,6 @@ namespace oxyui {
             if (parent != nullptr) a = parent->visibility;
             float alpha_mul = visibility * a;
 
-            // Быстро обновляем только прозрачность и цвет контура, если они изменились
             sf::Color dynamic_text_color = text_color;
             dynamic_text_color.a = static_cast<sf::Uint8>(dynamic_text_color.a * alpha_mul);
             text.setFillColor(dynamic_text_color);
@@ -934,15 +947,12 @@ namespace oxyui {
             text.setOutlineColor(dynamic_border_color);
             text.setOutlineThickness(text_border_size * win_w);
 
-            // Мгновенная пиксельная отрисовка
             win.draw(text);
         }
-        // ----------------------------------------------------------------------
 
 
-        // Рекурсивно передаем ui_sys дальше по иерархии детей
         for (const auto& child : children) {
-            child->draw(win, ui_sys); // <-- ИСПРАВЛЕНИЕ
+            child->draw(win, ui_sys);
         }
     }
 
@@ -961,13 +971,11 @@ namespace oxyui {
         static sf::Clock delta_clock;
         float dt = delta_clock.restart().asSeconds();
 
-        // 1. Апдейтим и очищаем завершенные твины
         for (auto it = tweens.begin(); it != tweens.end();) {
             if (*it) {
                 (*it)->update(dt);
             }
 
-            // Очищаем уничтоженные/ненужные твины, если shared_ptr больше нигде не удерживается
             if (it->use_count() == 1 && (*it)->is_finished()) {
                 it = tweens.erase(it);
             }
@@ -988,16 +996,13 @@ namespace oxyui {
     void calculate_gzindex(uiobject* obj, int& current_global_index) {
         if (!obj) return;
 
-        // Сначала присваиваем глобальный индекс самому родителю
         obj->global_zindex = current_global_index++;
 
-        // Сортируем детей этого объекта по их локальному z_index перед обходом
         if (!obj->children.empty()) {
             std::sort(obj->children.begin(), obj->children.end(), [](const uiobject* a, const uiobject* b) {
                 return a->z_index < b->z_index;
                 });
 
-            // Рекурсивно идем вглубь по отсортированным детям
             for (uiobject* child : obj->children) {
                 calculate_gzindex(child, current_global_index);
             }
@@ -1007,7 +1012,6 @@ namespace oxyui {
     void uisystem::sort() {
         if (objects.empty()) return;
 
-        // 1. Собираем все корневые элементы (у которых parent == nullptr)
         std::vector<uiobject*> roots;
         for (const auto& obj : objects) {
             if (obj->parent == nullptr) {
@@ -1015,19 +1019,16 @@ namespace oxyui {
             }
         }
 
-        // 2. Сортируем корневые элементы между собой по их локальному z_index
         std::sort(roots.begin(), roots.end(), [](const uiobject* a, const uiobject* b) {
             return a->z_index < b->z_index;
             });
 
-        // 3. Запускаем рекурсивный сквозной подсчет глобального z-индекса по всему дереву
+
         int current_global_index = 0;
         for (uiobject* root : roots) {
             calculate_gzindex(root, current_global_index);
         }
 
-        // 4. Теперь сортируем НАШ ПЛОСКИЙ ВЕКТОР СИСТЕМЫ по сгенерированному global_zindex.
-        // Элементы, которые рисуются позже (имеют больший global_zindex), окажутся в конце вектора.
         std::sort(objects.begin(), objects.end(), [](const std::shared_ptr<uiobject>& a, const std::shared_ptr<uiobject>& b) {
             return a->global_zindex < b->global_zindex;
             });
@@ -1036,42 +1037,78 @@ namespace oxyui {
     event uisystem::check_events(sf::Event& ev, sf::RenderWindow& win) {
         sf::Vector2f point = win.mapPixelToCoords(sf::Mouse::getPosition(win));
 
-        // Так как плоский вектор objects теперь ИДЕАЛЬНО отсортирован по возрастанию global_zindex,
-        // мы можем просто пройтись по нему В ОБРАТНОМ НАПРАВЛЕНИИ (от самых верхних объектов на экране к нижним).
+        uiobject* hovered_object = nullptr;
+
         for (auto it = objects.rbegin(); it != objects.rend(); ++it) {
             uiobject* o = it->get();
-
-            // Проверяем видимость и флаг кликабельности (clickable)
             if (o->visibility <= 0.0f || !o->clickable) continue;
 
-            // Проверка попадания в рамки absolute_pos за O(1)
             if (point.x >= o->absolute_pos.x && point.x <= o->absolute_pos.x + o->real_size.x &&
                 point.y >= o->absolute_pos.y && point.y <= o->absolute_pos.y + o->real_size.y) {
+                hovered_object = o;
+                break;
+            }
+        }
 
-                event e;
-                e.object = o;
-                e.mouse_pos = point;
-                e.type = event_t::hover;
-                e.button = mousebutton::none;
+        if (hovered_object) {
+            event e;
+            e.object = hovered_object;
+            e.mouse_pos = point;
+            e.type = event_t::hover;
+            e.button = mousebutton::none;
 
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-                    e.type = event_t::mousedown;
-                    e.button = mousebutton::left;
-                }
-                else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
-                    e.type = event_t::mousedown;
-                    e.button = mousebutton::right;
-                }
-                else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle)) {
-                    e.type = event_t::mousedown;
-                    e.button = mousebutton::middle;
-                }
-                else if (ev.type == sf::Event::MouseWheelScrolled && ev.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
-                    e.type = (ev.mouseWheelScroll.delta > 0.f) ? event_t::scrollup : event_t::scrolldown;
-                    e.button = mousebutton::none;
-                    ev.type = sf::Event::Count;
-                }
+            if (ev.type == sf::Event::MouseWheelScrolled && ev.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
+                hovered_object->current_scroll_delta = ev.mouseWheelScroll.delta;
+                e.type = (hovered_object->current_scroll_delta > 0.f) ? event_t::scrollup : event_t::scrolldown;
+                hovered_object->current_scroll_delta = 0.0f;
+                ev.type = sf::Event::Count;
                 return e;
+            }
+
+            if (ev.type == sf::Event::MouseButtonPressed) {
+                hovered_object->is_pressed = true;
+
+                e.type = event_t::mousedown;
+                if (ev.mouseButton.button == sf::Mouse::Button::Left) e.button = mousebutton::left;
+                else if (ev.mouseButton.button == sf::Mouse::Button::Right) e.button = mousebutton::right;
+                else if (ev.mouseButton.button == sf::Mouse::Button::Middle) e.button = mousebutton::middle;
+
+                ev.type = sf::Event::Count;
+                return e;
+            }
+            else if (ev.type == sf::Event::MouseButtonReleased) {
+                if (hovered_object->is_pressed) {
+                    e.type = event_t::mouseup;
+                    if (ev.mouseButton.button == sf::Mouse::Button::Left) e.button = mousebutton::left;
+                    else if (ev.mouseButton.button == sf::Mouse::Button::Right) e.button = mousebutton::right;
+                    else if (ev.mouseButton.button == sf::Mouse::Button::Middle) e.button = mousebutton::middle;
+                }
+
+                for (auto& obj : objects) {
+                    if (obj) obj->is_pressed = false;
+                }
+
+                ev.type = sf::Event::Count;
+                return e;
+            }
+
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && hovered_object->is_pressed) {
+                e.type = event_t::mousedown;
+                e.button = mousebutton::left;
+                return e;
+            }
+            else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right) && hovered_object->is_pressed) {
+                e.type = event_t::mousedown;
+                e.button = mousebutton::right;
+                return e;
+            }
+
+            return e;
+        }
+
+        if (ev.type == sf::Event::MouseButtonReleased) {
+            for (auto& obj : objects) {
+                if (obj) obj->is_pressed = false;
             }
         }
 

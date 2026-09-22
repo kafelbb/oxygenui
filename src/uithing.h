@@ -1,8 +1,13 @@
 #include "oxygenui-lib/oxygenui.h"
+#include "resources.h"
 
 oxyui::uisystem sys;
 
+std::string build_number;
+
 void init_ui() {
+	build_number = "22092026\\1800";
+
 	auto tr = std::make_shared<oxyui::color>();
 	tr->content = sf::Color::Transparent;
 	tr->position = 0.0f;
@@ -12,7 +17,7 @@ void init_ui() {
 	bg->pos = { -0.5,0,-0.5,0 };
 	bg->size = { 2,0,2,0 };
 	bg->id = 0;
-	bg->set_image("res/a.png", false);
+	bg->set_image_from_mem(a_png_dat, a_png_len, false);
 	bg->rotation = 12;
 	bg->repeated = true;
 	bg->image_scale = { 0.75f, 0.75f };
@@ -52,6 +57,7 @@ void init_ui() {
 	center->layout_type = oxyui::layout::flex_y;
 	center->flex_padding = { 0.05, 0.05 };
 	center->background_color.content.push_back(tr);
+	center->name = "center";
 	
 	//bar
 	auto bar = oxyui::uiobject::create(sys);
@@ -61,6 +67,7 @@ void init_ui() {
 	bar->shadow_size = 0.025f;
 	bar->shadow_offset = { 0,0 };
 	bar->layout_type = oxyui::layout::flex_x;
+	bar->name = "bar";
 	//bar->flex_padding = { 0.05, 0.05 };
 	
 	auto grey = std::make_shared<oxyui::color>();
@@ -72,9 +79,9 @@ void init_ui() {
 
 	//horizontal
 	auto hor = oxyui::uiobject::create(sys);
-	hor->size = { 1,0,1,0 };
+	hor->size = { 1,0,0.85,0 };
 	hor->layout_type = oxyui::layout::flex_x;
-	hor->flex_padding = { 0.05,0.05 };
+	hor->flex_padding = { 0.025,0.05 };
 	hor->background_color.content.push_back(tr);
 
 	//grey windows
@@ -98,6 +105,8 @@ void init_ui() {
 	grey1->background_color.content.push_back(gr1);
 	grey1->background_color.content.push_back(gr2);
 
+	grey1->name = "text";
+
 	auto grey2 = oxyui::uiobject::create(sys);
 	grey2->size = { 0.75,0,0.85,0 };
 	grey2->layout_type = oxyui::layout::flex_y;
@@ -109,6 +118,8 @@ void init_ui() {
 
 	grey2->background_color.content.push_back(gr1);
 	grey2->background_color.content.push_back(gr2);
+
+	grey2->name = "links";
 
 	
 	//blacks
@@ -138,7 +149,7 @@ void init_ui() {
 	auto title_about = oxyui::uiobject::create(sys);
 	title_about->size = { 1,0,0.4,0 };
 	title_about->background_color.content.push_back(tr);
-	title_about->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	title_about->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	title_about->text_content = "about";
 	title_about->text_color = sf::Color::White;
 	title_about->text_size = 0.03f;
@@ -152,7 +163,7 @@ void init_ui() {
 	auto title_links = oxyui::uiobject::create(sys);
 	title_links->size = { 1,0,0.3,0 };
 	title_links->background_color.content.push_back(tr);
-	title_links->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	title_links->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	title_links->text_content = "links";
 	title_links->text_color = sf::Color::White;
 	title_links->text_size = 0.03f;
@@ -166,7 +177,7 @@ void init_ui() {
 	auto title_main = oxyui::uiobject::create(sys);
 	title_main->size = { 1,0,1,0 };
 	title_main->background_color.content.push_back(tr);
-	title_main->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	title_main->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	title_main->text_content = "oxygenui";
 	title_main->text_color = sf::Color::Black;
 	title_main->text_size = 0.03f;
@@ -187,7 +198,7 @@ void init_ui() {
 	icon->background_color.content.push_back(tr);
 	icon->size = { 1,0,1,0 };
 	icon->padding = { 0.0175, 0.0175, 0.0175, 0.0175 };
-	icon->set_image("res/icon.png", true);
+	icon->set_image_from_mem(icon_png_dat, icon_png_len, true);
 	icon->aspect_ratio = 1;
 	icon->dominant_axis = oxyui::axis::height;
 	icon->dominant_padding_axis = oxyui::axis::height;
@@ -208,8 +219,22 @@ void init_ui() {
 	about_text->text_content = "oxygenui is a crossplatform, simple and intuitive GUI library that brings the UI development experience of CSS and Roblox Studio into C++ / SFML.\nno strict, boring af standard window - forms (like in GTK / Qt), only pure creative freedom!";
 	about_text->text_wrap = true;
 	about_text->dominant_axis = oxyui::axis::height;
-	about_text->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	about_text->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	black1->add(about_text.get());
+	about_text->name = "about_text";
+
+
+	auto info_text = oxyui::uiobject::create(sys);
+	info_text->size = { 1,0,0.25,0 };
+	info_text->pos = { 0,0,0.75,0 };
+	info_text->background_color.content.push_back(tr);
+	info_text->text_color = sf::Color(255,255,255, 50);
+	info_text->text_size = 0.025;
+	info_text->text_content = "demo build number: "+build_number+"\noxygenui release string: "+oxyui::release_string;
+	info_text->text_wrap = true;
+	info_text->dominant_axis = oxyui::axis::height;
+	info_text->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
+	info_text->z_index = 67;
 
 
 	//btns
@@ -222,7 +247,7 @@ void init_ui() {
 	gitbtn->size = { 1,0,1,0 };
 	gitbtn->background_color.content.push_back(prpl1);
 	gitbtn->background_color.content.push_back(prpl2);
-	gitbtn->roundness = 0.015;
+	gitbtn->roundness = 0.0175;
 	gitbtn->shadow_color = sf::Color(0, 0, 0, 50);
 	gitbtn->shadow_size = 0.025f;
 	gitbtn->shadow_offset = { 0,0 };
@@ -232,7 +257,7 @@ void init_ui() {
 	wikibtn->size = { 1,0,1,0 };
 	wikibtn->background_color.content.push_back(wh);
 	wikibtn->background_color.content.push_back(grey);
-	wikibtn->roundness = 0.015;
+	wikibtn->roundness = 0.0175;
 	wikibtn->shadow_color = sf::Color(0, 0, 0, 50);
 	wikibtn->shadow_size = 0.025f;
 	wikibtn->shadow_offset = { 0,0 };
@@ -242,7 +267,7 @@ void init_ui() {
 	demobtn->size = { 1,0,1,0 };
 	demobtn->background_color.content.push_back(wh);
 	demobtn->background_color.content.push_back(grey);
-	demobtn->roundness = 0.015;
+	demobtn->roundness = 0.0175;
 	demobtn->shadow_color = sf::Color(0, 0, 0, 50);
 	demobtn->shadow_size = 0.025f;
 	demobtn->shadow_offset = { 0,0 };
@@ -253,12 +278,12 @@ void init_ui() {
 	btnfrm->padding = { 0.005,0.005,0.005,0.005 };
 	btnfrm->background_color.content.push_back(tr);
 	btnfrm->layout_type = oxyui::layout::flex_y;
-	btnfrm->flex_padding = { 0.025, 0.025 };
+	btnfrm->flex_padding = { 0.02, 0.02 };
 
 	auto text_github = oxyui::uiobject::create(sys);
 	text_github->size = { 1,0,1,0 };
 	text_github->background_color.content.push_back(tr);
-	text_github->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	text_github->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	text_github->text_content = "github";
 	text_github->text_color = sf::Color::White;
 	text_github->text_size = 0.025f;
@@ -273,7 +298,7 @@ void init_ui() {
 	auto text_wiki = oxyui::uiobject::create(sys);
 	text_wiki->size = { 1,0,1,0 };
 	text_wiki->background_color.content.push_back(tr);
-	text_wiki->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	text_wiki->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	text_wiki->text_content = "wiki";
 	text_wiki->text_color = sf::Color::Black;
 	text_wiki->text_size = 0.025f;
@@ -288,7 +313,7 @@ void init_ui() {
 	auto text_demo = oxyui::uiobject::create(sys);
 	text_demo->size = { 1,0,1,0 };
 	text_demo->background_color.content.push_back(tr);
-	text_demo->font_path = "res/fonts/Montserrat-SemiBold.ttf";
+	text_demo->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);
 	text_demo->text_content = "demo";
 	text_demo->text_color = sf::Color::Black;
 	text_demo->text_size = 0.025f;

@@ -1,6 +1,8 @@
 ﻿#include <iostream>
 #include <thread>
 #include <chrono>
+#include <string>
+#include <cstdlib>
 
 #include "oxygenui-lib/oxygenui.h"
 #include "uithing.h"
@@ -13,7 +15,28 @@ oxyui::uiobject* gitbtn;
 oxyui::uiobject* wikibtn;
 oxyui::uiobject* demobtn;
 
+oxyui::uiobject* links;
+oxyui::uiobject* text;
+oxyui::uiobject* about;
+oxyui::uiobject* bar;
+oxyui::uiobject* center;
+
 oxyui::tween_info info;
+
+void open_link(const std::string& url) {
+#if defined(_WIN32) || defined(_WIN64)
+    std::string command = "start " + url;
+    std::system(command.c_str());
+#elif defined(__APPLE__)
+    std::string command = "open " + url;
+    std::system(command.c_str());
+#elif defined(__LINUX__) || defined(__linux__)
+    std::string command = "xdg-open " + url;
+    std::system(command.c_str());
+#else
+#error "unsupported platform"
+#endif
+}
 
 void bulge(std::string mode) {
     info.target_time = 0.15f;
@@ -60,6 +83,27 @@ void display(sf::RenderWindow& win) {
     sys.update_tweens();
 }
 
+void apply_adaptive_bullshit(float aspect_ratio) {
+    std::cout << aspect_ratio << std::endl;
+    if (aspect_ratio < 1.6f && aspect_ratio > 1.3f) {
+        links->size = { 0.75,0,0.75,0 };
+        text->size = { 1,0,0.55,1 };
+        about->text_size = 0.025;
+        bar->size = { 1,0,0.12,0 };
+        center->padding = { 0.05, 0.05, 0.05, 0.05 };
+    }
+    if (aspect_ratio < 1.83f && aspect_ratio > 1.6f) {
+        links->size = { 0.75,0,0.85,0 };
+        text->size = { 1,0,0.6,1 };
+        about->text_size = 0.025;
+        bar->size = { 1,0,0.145,0 };
+        center->padding = { 0.05, 0.05, 0.05, 0.05 };
+    }
+    if (aspect_ratio > 1.83f) {
+        center->padding = { 0.075, 0.075, 0.03, 0.03 };
+    }
+}
+
 void start(sf::RenderWindow& win) {
     sf::Event ev;
 
@@ -89,6 +133,10 @@ void start(sf::RenderWindow& win) {
             if (ev.type == sf::Event::Resized) {
                 sf::FloatRect visibleArea(0.f, 0.f, static_cast<float>(ev.size.width), static_cast<float>(ev.size.height));
                 win.setView(sf::View(visibleArea));
+
+                float aspect_ratio = static_cast<float>(ev.size.width) / static_cast<float>(ev.size.height);
+                apply_adaptive_bullshit(aspect_ratio);
+
                 sys.update_uiobjects(win);
             }
 
@@ -96,19 +144,36 @@ void start(sf::RenderWindow& win) {
 
             if (e.object) {
                 if (e.object->name == "git" || e.object->name == "wiki" || e.object->name == "demo") {
-                    if (e.type == oxyui::event_t::hover) {
-                        win.setMouseCursor(cursor_hand);
-
-                        if (e.object->name == "git") {
+                    if (e.object->name == "git") {
+                        if (e.type == oxyui::event_t::hover) {
+                            win.setMouseCursor(cursor_hand);
                             bulge("git");
                         }
-                        else if (e.object->name == "wiki") {
+                        else if (e.type == oxyui::event_t::mouseup) {
+                            open_link("https://github.com/kafelbb/oxygenui");
+                        }
+                    }
+                    else if (e.object->name == "wiki") {
+                        if (e.type == oxyui::event_t::hover) {
+                            win.setMouseCursor(cursor_hand);
                             bulge("wiki");
                         }
-                        else if (e.object->name == "demo") {
+                        if (e.type == oxyui::event_t::mouseup) {
+                            open_link("https://github.com/kafelbb/oxygenui/blob/main/readme/wiki.md");
+                        }
+                    }
+                    else if (e.object->name == "demo") {
+                        if (e.type == oxyui::event_t::hover) {
+                            win.setMouseCursor(cursor_hand);
                             bulge("demo");
                         }
-                        else {
+                        if (e.type == oxyui::event_t::mouseup) {
+                            open_link("file:///C:/Users/ass/source/repos/oxygenui/page/images/o.mp4");
+                        }
+                    }
+                    else {
+                        if (e.type == oxyui::event_t::hover) {
+                            win.setMouseCursor(cursor_hand);
                             bulge("nothing");
                         }
                     }
@@ -128,7 +193,6 @@ void start(sf::RenderWindow& win) {
 
             main_center->update(win, sys);
         }
-
 
         if (dt > 0.16f) dt = 0.f;
 
@@ -162,6 +226,12 @@ int main() {
     gitbtn = sys.get_by_name("git");
     wikibtn = sys.get_by_name("wiki");
     demobtn = sys.get_by_name("demo");
+
+    links = sys.get_by_name("links");
+    text = sys.get_by_name("text");
+    about = sys.get_by_name("about_text");
+    bar = sys.get_by_name("bar");
+    center = sys.get_by_name("center");
 
     start(win);
 

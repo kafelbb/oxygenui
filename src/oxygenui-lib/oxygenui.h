@@ -12,6 +12,8 @@ namespace oxyui {
 
 	const float pi = 3.14159265f;
 
+	inline std::string release_string = "22092026\\1800\\a001";
+
 	enum class mousebutton {
 		left,
 		right,
@@ -81,13 +83,18 @@ namespace oxyui {
 		static std::shared_ptr<uiobject> create(uisystem& sys);
 		void add(uiobject* child);
 		void sort();
+
 		void set_image(std::string s, bool smooth = true);
+		void set_image_from_mem(const unsigned char* data, std::size_t size, bool smooth = true);
+		void set_font(std::string s);
+		void set_font_from_mem(const unsigned char* data, std::size_t size);
 
 		void update(sf::RenderTarget& win, const uisystem& ui_sys);
 		void draw(sf::RenderTarget& win, const uisystem& ui_sys);
 
 	public:
 		bool clickable = true;
+		bool is_pressed = false;
 
 		vector4 size;
 		vector4 pos;
@@ -126,6 +133,7 @@ namespace oxyui {
 		std::string image_path;
 		sf::Sprite image_sprite;
 		bool repeated;
+		bool image_loaded = false;
 		sf::Vector2f image_offset{ 0.f, 0.f };
 		sf::Vector2f image_scale{ 1.f, 1.f };
 
@@ -155,6 +163,8 @@ namespace oxyui {
 
 		uiobject* parent;
 		std::vector<uiobject*> children;
+
+		float current_scroll_delta = 0.0f;
 	};
 
 	class tween;
@@ -206,10 +216,8 @@ namespace oxyui {
 		step
 	};
 
-	// --- Внутри namespace oxyui ---
-
 	struct tween_info {
-		float target_time = 1.0f;                        // Длительность в секундах
+		float target_time = 1.0f;
 		ease_style easing_style = ease_style::linear;
 		ease_type easing_type = ease_type::out;
 	};
