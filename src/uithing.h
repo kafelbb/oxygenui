@@ -216,7 +216,7 @@ void init_ui() {
 	about_text->background_color.content.push_back(tr);
 	about_text->text_color = sf::Color::White;
 	about_text->text_size = 0.025;
-	about_text->text_content = "oxygenui is a crossplatform, simple and intuitive GUI library that brings the UI development experience of CSS and Roblox Studio into C++ / SFML.\nno strict, boring af standard window - forms (like in GTK / Qt), only pure creative freedom!";
+	about_text->text_content = "oxygenui is a crossplatform, simple and intuitive GUI library that brings UI development experience of CSS and Roblox Studio into C++.\nno strict, boring af standard window - forms (like in GTK / Qt), only pure creative freedom!";
 	about_text->text_wrap = true;
 	about_text->dominant_axis = oxyui::axis::height;
 	about_text->set_font_from_mem(fonts_mont_sb_ttf_dat, fonts_mont_sb_ttf_len);

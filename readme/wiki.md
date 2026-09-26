@@ -1,8 +1,13 @@
-## Wiki
-### intro
-I highly recommend getting familliar with SFML 2.6.1 basics first, before we dive deeply into the material 
+## intro
+so, the **oxygenui** as I said previously, is just an SFML wrapper. My lib can't directly
+interface with your OS's drawing funcs, so it uses SFML as its rendering backbone.
+<br>
+<br>
+**oxygenui** only can provide to **you** a convinient way to rapidly develop modern,
+sleek-looking beautiful UIs.
 
 ------------------------------
+
 ## data types
 oxygenui introduces several custom data types:
 
@@ -116,40 +121,49 @@ event — a struct that represents the event itself
 
 it stores:
 
-* event_t type — type of event
-* mousebutton button — pressed button
+* event_t type — the type of event
+* mousebutton button — the pressed button
 * sf::Vector2f mouse_pos — mouse position
 * uiobject* object — a pointer to the object that event happend with
 
 ------------------------------
 ## architecture
-### graphics pipeline
-graphics pipeline vars:
+### basics
+**oxygenui** uses nested architecture, which consists of **uisystems** and **uiobjects**.
 
-* const float pi — pi constant used for rounding corners
-* bool updating — a flag telling the pipeline to recalculate the absolute sizes of objects, recreate their render_texture buffers, and redraw them
-* std::vector<std::shared_ptr> ui_objects — a global array that stores all uiobjects
+------------------------------
 
-graphics pipeline funcs:
+### uisystem
+**uisystem** is a container, which stores **uiobjects** and **tweens** in it.
+<br>
+Its main function is to make an isolated environment, that stores only those elements,
+that belong to itself.
+<br>
+<br>
+**uisystem** is mainly used to create different **"scenes"** (and also to make the code
+somewhat clean).
 
-* void draw(sf::RenderTarget& win) — begins drawing the root objects and triggers recursive rendering for their children
-* void sort() — sorts objects from ``ui_objects`` based on their global_z_index
-* event check_events(sf::Event& ev, sf::RenderWindow& win) — checks for events that happened with all ``uiobjects``
+------------------------------
 
-## uiobject
-``uiobject`` is a class representing the abstract UI element used to construct your GUI. 
-instead of dealing with a massive hierarchy of classes like **Frame**, **ImageLabel**, and others from Roblox Studio, or a bunch of HTML tags like **div**, **img**, or other, we have one single class that serves as a representation for all of them.
+### uiobject
+**uiobject** is a big-ass container that describes what to draw and how.
+<br>
+<br>
+It combines a **Frame (\<div>\)**, **ImageLabel (\<img>\)**, **Image/TextButton (\<button>\)**
+and a **TextLabel (\<a>\)** in itself.
+<br>
+<br>
+Every **uiobject** belongs to its **parent** element. It can be either the program window
+itself, or an another **uiobject**.
+<br>
+<br>**uiobject** **size**, **pos** (and some other properties) rely on **relative** 
+calculations, which means that **most** of the  uiobjects properties depend on their **parent**
+elements dimensions.
+<br>
+<br>
+**E.g. size** of one uiobject equals to **parent->size** vector * **child->size** vector.
 
-(i am also too lazy to make some sophisticated system like in rb studio)
-
-every object has a ``sprite`` and a ``rendertexture``. When ``draw_obj()`` is called, 
-**object** draws itself onto the ``rendertexture``, calls `draw_obj()` on his children, then it loads
-its ``rendertexture`` into the ``sprite``, and finaly draws its ``sprite`` on its parent ``rendertexture``.
-<br>This way oxygenui achieves some optimization "points", bc library doesn't need to do heavy calcualtions and OpenGL things every single frame. It only has to do it when ``updating`` is set to ``true``.
-
-in short, ``uiobject`` is a container holding an already-rendered version of itself, its children (and holding data about its description, aka properties)
-
-#### properties of uiobject:
+### its properties are:
 
 * **core properties**
    * bool **clickable** (default: ``true``) — determines if the object is tracked during input handling within check_events().
@@ -207,13 +221,30 @@ in short, ``uiobject`` is a container holding an already-rendered version of its
     * uiobject **parent** — a pointer to the parent UI container.
    * std::vector<uiobject*> **children** — an array of pointers to the object's child elements.
 
-uiobject methods:
+### its methods are:
 
 * static std::shared_ptr **create()** — creates new `uiobject` and pushes it to `ui_objects`
 * void **add(uiobject child)** — adds specified element to `children` of an element
 * void **sort()** — sorts child objects by their zindex
 * void **set_image(std::string s, bool smooth = true)** — loads image to object
 
+------------------------------
+
+### tween
+**tween** is a small container, that describes what **uiobject's** properties changes
+to interpolate **and how**.
+
+### its methods are:
+
+* **core methods:**
+    * static **std\::shared_ptr<tween> create(uisystem& sys, uiobject\* target, tween_info info, std\::map<std::string, float> target_properties)** - creates the tween object itself
+    * void **play()** - starts the tweening
+    * void **pause()** - pauses it
+    * void **stop()** - stops it
+    * void **update(float dt)** - updates linked object's properties
+    * bool **is_playing()** - returns either `true` if tween has is playing, or `false` if not
+	* bool **is_finished()** - returns either `true` if tween has finished playing, or `false` if not
+    
 ------------------------------
 ## usage examples
 

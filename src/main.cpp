@@ -85,21 +85,21 @@ void display(sf::RenderWindow& win) {
 
 void apply_adaptive_bullshit(float aspect_ratio) {
     std::cout << aspect_ratio << std::endl;
-    if (aspect_ratio < 1.6f && aspect_ratio > 1.3f) {
+    if (aspect_ratio < 1.6f && aspect_ratio > 1.3f) { //4/3
         links->size = { 0.75,0,0.75,0 };
         text->size = { 1,0,0.55,1 };
         about->text_size = 0.025;
         bar->size = { 1,0,0.12,0 };
         center->padding = { 0.05, 0.05, 0.05, 0.05 };
     }
-    if (aspect_ratio < 1.83f && aspect_ratio > 1.6f) {
+    if (aspect_ratio < 1.83f && aspect_ratio > 1.6f) { //16/9
         links->size = { 0.75,0,0.85,0 };
         text->size = { 1,0,0.6,1 };
         about->text_size = 0.025;
         bar->size = { 1,0,0.145,0 };
         center->padding = { 0.05, 0.05, 0.05, 0.05 };
     }
-    if (aspect_ratio > 1.83f) {
+    if (aspect_ratio > 1.83f) { //uw
         center->padding = { 0.075, 0.075, 0.03, 0.03 };
     }
 }

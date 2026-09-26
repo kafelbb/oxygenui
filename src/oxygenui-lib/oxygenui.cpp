@@ -2,9 +2,7 @@
 #include <cmath>
 #include <algorithm>
 
-
 namespace oxyui {
-    //потом уже вынесу твины и объекты в отдельные хедеры, я ебал ща это делать
     float ease_linear(float t) { return t; }
 
     float ease_quad(float t, ease_type type) {
@@ -237,8 +235,6 @@ namespace oxyui {
             return a->z_index < b->z_index;
             });
     }
-
-
 
     void apply_aspect_ratio(uiobject* o, float& real_w, float& real_h) {
         if (o->aspect_ratio <= 0.0f) return;

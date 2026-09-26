@@ -42,8 +42,6 @@ h3 {
 }
 .dark_gray_thing {
     background: linear-gradient(180deg, rgba(20, 20, 20, 0.65) 0%, rgba(0, 0, 0, 0.85) 100%);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
     box-shadow: 0px 0px 16px rgba(0,0,0,0.5);
     color: white;
     border: 1px solid rgba(0,0,0, 0.2);
@@ -334,13 +332,13 @@ img {
 
 
 .checkerboard {
-    --size: 160px;
+    --size: 256px;
     width: 200%;
     height: 100%;
     background-image: linear-gradient(45deg, #5c5c5c 25%, transparent 25%), linear-gradient(-45deg, #5c5c5c 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #5c5c5c 75%), linear-gradient(-45deg, transparent 75%, #5c5c5c 75%);
     background-size: var(--size) var(--size);
     background-color: #3d3d3d;
-    animation: scroll 6s linear infinite;
+    animation: scroll 12s linear infinite;
     position: relative;
 }
 
@@ -412,11 +410,6 @@ img {
         height: auto !important;
     }
 }
-
-/*======================================================
-  КРОССБРАУЗЕРНАЯ МОБИЛЬНАЯ АДАПТИВНОСТЬ (УЛЬТРА-КОМПАКТ)
-======================================================*/
-
 @media (max-aspect-ratio: 1/1) {
     .dark_gray_thing {
         position: fixed !important;
@@ -436,7 +429,7 @@ img {
         right: 0 !important;
         top: 0 !important;
         bottom: 0 !important;
-        padding: 2rem !important; /* Уменьшили внешние поля вокруг контента */
+        padding: 2rem !important;
         margin: 0 !important;
         width: auto !important;
         height: auto !important;
@@ -449,7 +442,6 @@ img {
         width: 100%;
         height: 100%;
         text-shadow: 0px 0px 10px rgba(0,0,0,0.2);
-        /* ИСПРАВЛЕНИЕ: Сжали максимальный размер шрифта до аккуратных 16px */
         font-size: clamp(12px, 1.5vw + 1vh + 1px, 16px) !important;
     }
 
@@ -459,7 +451,6 @@ img {
         box-sizing: border-box;
     }
 
-    /* Уменьшили расстояние между карточками с 2.5rem до аккуратных 1.5rem */
     .center {
         flex-direction: column !important;
         gap: 3rem !important;
@@ -481,20 +472,20 @@ img {
     }
 
     .icon {
-        height: 1.4rem; /* Сделали иконку в шапке еще аккуратнее */
+        height: 1.4rem;
         padding: 0;
     }
 
     .bar {
         border-radius: 0.8rem;
         height: auto;
-        padding: 0.8rem !important; /* Уменьшили внутренний отступ плашки */
+        padding: 0.8rem !important;
     }
 
     .othergrey {
         border-radius: 0.8rem;
         height: auto !important;
-        max-height: 18rem; /* Уменьшили высоту окна about, чтобы links были ближе */
+        max-height: 18rem;
     }
 
     .othergrey2 {
@@ -527,13 +518,12 @@ img {
     }
 
     .btns {
-        gap: 0.8rem; /* Уменьшили отступы между кнопками внутри черного бокса */
+        gap: 0.8rem;
         height: auto !important;
     }
 
     .btn {
         font-size: 0.85rem;
-        /* ИСПРАВЛЕНИЕ: Кнопки стали значительно тоньше, компактнее и аккуратнее */
         height: 5rem !important;
         padding-top: 0.75rem !important;
         padding-bottom: 0.75rem !important;
