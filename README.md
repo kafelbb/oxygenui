@@ -73,7 +73,7 @@ _ __
 ## how 2 install
 
 ### 1. install SFML (STRICTLY 2.6.1!!11!!)
-since **oxygenui** is just a silly little SFML wrapper, it needs the SFML to work (captain obvious right here)
+since **oxygenui** is just a silly little SFML wrapper, it needs the SFML to work (no shit sherlock)
 
 * **michaelsoft binbows 96 (vcpkg)**
   ```json
