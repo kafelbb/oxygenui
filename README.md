@@ -1,5 +1,5 @@
 ﻿# oxygenui
-
+### ⚠ this is just a proof of concept currently! its not optimized at all.
 <!-- ### [ русский ](README_RU.md) -->
 ### [ website ](https://kafelbb.github.io/oxygenui/)
 a crossplatform, simple and intuitive GUI library that brings UI development experience of CSS and Roblox Studio into C++.
